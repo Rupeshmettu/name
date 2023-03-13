@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq" xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd">
+	<anypoint-mq:config name="Anypoint_MQ_Config" doc:name="Anypoint MQ Config" doc:id="90958527-0211-4a38-85c4-bea164d00506" >
+		<anypoint-mq:connection clientId="7647b0c7e4fa4b51a4a4df3e61e82a07" clientSecret="F3c2675567754c08965bA1F58F3af180" />
+	</anypoint-mq:config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="66d7a743-e414-44b6-9a6e-e2a01d4a88c1" >
+		<http:request-connection host="localhost" port="8081" />
+	</http:request-config>
+	<flow name="employeesFlow" doc:id="f23b81d6-bd80-484e-a302-fadbc0726351" >
+		<anypoint-mq:subscriber doc:name="Subscriber" doc:id="5d63b7a2-c7fb-4bdc-b47a-29b1143f9184" config-ref="Anypoint_MQ_Config" destination="Queue"/>
+		<logger level="INFO" doc:name="payload" doc:id="099414f1-d3dc-4219-8f44-5291c67db9b7" message="#[payload]"/>
+		<logger level="INFO" doc:name="datetime" doc:id="1d0ce49a-2578-4c26-963e-1dfc246856c2" message="#[output application/json&#10;---&#10;{&#10;	Datetime:now()&#10;}]"/>
+		<http:request method="GET" doc:name="Request" doc:id="ae0657e4-ddc9-4bbd-b053-8dc0be24b83a" config-ref="HTTP_Request_configuration" path="/test"/>
+		<logger level="INFO" doc:name="response payload " doc:id="f546dd32-6629-48c4-9a2f-02a56b8348d2" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="007eb1f7-e003-4649-94d5-73cf21068c44" >
+				<logger level="INFO" doc:name="error Logger" doc:id="f8c0bdc0-7f01-4de9-af42-fafc7350d505" message='#[output application/json&#10;---&#10;{&#10;	"errorpayload":payload&#10;}]'/>
+				<anypoint-mq:publish doc:name="Publish error queue" doc:id="117f560b-aefc-417e-b271-b387057f0f72" config-ref="Anypoint_MQ_Config" destination="errorDLQ"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>
